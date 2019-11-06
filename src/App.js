@@ -1,26 +1,56 @@
 import React, { Component } from "react";
 
-import authors from "./data.js";
+import axios from "axios";
 
 // Components
 import Sidebar from "./Sidebar";
 import AuthorsList from "./AuthorsList";
 import AuthorDetail from "./AuthorDetail";
+import Loading from "./Loading";
 
 class App extends Component {
   state = {
-    currentAuthor: null
+    currentAuthor: null,
+    authors: [],
+    loading: true
   };
 
-  selectAuthor = author => this.setState({ currentAuthor: author });
+  async componentDidMount() {
+    try {
+      const response = await axios.get(
+        "https://the-index-api.herokuapp.com/api/authors/"
+      );
+      const authors = response.data;
+      this.setState({ authors: authors, loading: false });
+      console.log("loaded");
+    } catch (err) {
+      console.log("What is the error?", err);
+    }
+  }
+
+  selectAuthor = async authorId => {
+    this.setState({ loading: true });
+    const response = await axios.get(
+      `https://the-index-api.herokuapp.com/api/authors/${authorId}`
+    );
+    const currentAuthor = response.data;
+    this.setState({ currentAuthor: currentAuthor, loading: false });
+  };
 
   unselectAuthor = () => this.setState({ currentAuthor: null });
 
   getContentView = () => {
-    if (this.state.currentAuthor) {
+    if (this.state.loading) {
+      return <Loading />;
+    } else if (this.state.currentAuthor) {
       return <AuthorDetail author={this.state.currentAuthor} />;
     } else {
-      return <AuthorsList authors={authors} selectAuthor={this.selectAuthor} />;
+      return (
+        <AuthorsList
+          authors={this.state.authors}
+          selectAuthor={this.selectAuthor}
+        />
+      );
     }
   };
 
